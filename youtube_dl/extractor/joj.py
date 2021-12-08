@@ -68,8 +68,23 @@ class JojIE(InfoExtractor):
         formats = []
         for format_url in try_get(bitrates, lambda x: x['mp4'], list) or []:
             if isinstance(format_url, compat_str):
+                # some videos have quality in format 720p, 560p, ...
                 height = self._search_regex(
                     r'(\d+)[pP]\.', format_url, 'height', default=None)
+                # some videos have quality in format 720, 560, ...
+                if height == None:
+                    height = self._search_regex(
+                        r'(\d+)\.', format_url, 'height', default=None)
+                # some videos have quality profiles pal, hq, hi
+                if height == None:
+                    heightCode = self._search_regex(
+                        r'[\-\_]([^\-\_]+)\.', format_url, 'heightCode', default=None)
+                    if heightCode == "pal":
+                        height = 576 # 720 x 576
+                    if heightCode == "hq":
+                        height = 384 # 560 x 384
+                    if heightCode == "hi":
+                        height = 360 # 640 x 360
                 formats.append({
                     'url': format_url,
                     'format_id': '%sp' % height if height else None,
